@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User preferences, synchronization states, and Google profile parameters.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Authentication UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the Google connection."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email of the Google account."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Google profile photo URL link."
+        },
+        "themeId": {
+          "type": "string",
+          "description": "Determines the selected UI visual theme.",
+          "enum": ["arctic-white", "obsidian-black", "midnight-blue", "emerald-glass", "crimson-red", "purple-nebula", "cyber-teal", "gold-elite"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of the last state alignment."
+        }
+      },
+      "required": ["userId", "name", "email", "updatedAt"]
+    },
+    "Watchlist": {
+      "title": "Watchlist",
+      "description": "User's customized list of favorited coin pairs for automated signaling.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the owner."
+        },
+        "coins": {
+          "type": "array",
+          "description": "List of active coin pairs, e.g. BTC/USDT."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Sovereign timestamp."
+        }
+      },
+      "required": ["userId", "coins", "updatedAt"]
+    },
+    "ExchangeCredentials": {
+      "title": "ExchangeCredentials",
+      "description": "Secure storage for exchange keys.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the related user."
+        },
+        "bybit": {
+          "type": "object",
+          "description": "Bybit secret parameters."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Modification timestamp."
+        }
+      },
+      "required": ["userId", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores core profile preferences, theme selections, and sync details."
+    },
+    "/users/{userId}/watchlists/default": {
+      "schema": "Watchlist",
+      "description": "Stores user's synchronized trading cohort watchlists."
+    },
+    "/users/{userId}/secure/credentials": {
+      "schema": "ExchangeCredentials",
+      "description": "Strict isolation subcollection containing encrypted/secure API exchange keys."
+    }
+  }
+}

@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net - Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Identifies the Owner by UID matching Auth standard
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Phase 4: Validation Helpers
+    function isValidUserProfile(user) {
+      return user.userId is string 
+        && user.userId.size() <= 128
+        && user.name is string 
+        && user.name.size() <= 100
+        && user.email is string 
+        && user.email.size() <= 100
+        && user.avatarUrl is string 
+        && user.avatarUrl.size() <= 500
+        && user.themeId is string
+        && user.themeId.size() <= 50
+        && user.keys().hasAll(['userId', 'name', 'email', 'updatedAt'])
+        && user.keys().size() <= 6;
+    }
+
+    function isValidWatchlist(wl) {
+      return wl.userId is string
+        && wl.userId.size() <= 128
+        && wl.coins is list
+        && wl.coins.size() <= 100
+        && wl.keys().hasAll(['userId', 'coins', 'updatedAt'])
+        && wl.keys().size() == 3;
+    }
+
+    function isValidExchangeCredentials(creds) {
+      return creds.userId is string
+        && creds.userId.size() <= 128
+        && creds.bybit is map
+        && creds.keys().hasAll(['userId', 'updatedAt'])
+        && creds.keys().size() <= 4;
+    }
+
+    // Users collection match blocks
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().userId == userId;
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().userId == userId && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Watchlists subcollection
+      match /watchlists/{watchlistId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId) && isValidWatchlist(incoming()) && incoming().userId == userId;
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId) && isValidWatchlist(incoming()) && incoming().userId == userId && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId);
+      }
+
+      // Secure credentials subcollection
+      match /secure/{credentialsId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(credentialsId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(credentialsId) && isValidExchangeCredentials(incoming()) && incoming().userId == userId;
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(credentialsId) && isValidExchangeCredentials(incoming()) && incoming().userId == userId && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(credentialsId);
+      }
+    }
+  }
+}

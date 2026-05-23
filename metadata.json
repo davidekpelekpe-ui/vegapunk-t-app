@@ -1,0 +1,6 @@
+{
+  "name": "Vegapunk Trading Hub",
+  "description": "Sleek, futuristic liquid-glass mobile-first web trading cockpit with intelligent AI signals, advanced charts, real-time Bybit integrations, and customized premium themes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
